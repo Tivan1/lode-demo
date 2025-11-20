@@ -45,7 +45,7 @@
         document.getElementById('container').appendChild(renderer.domElement);
 
         // Licht
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1);
         scene.add(ambientLight);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
         directionalLight.position.set(0, 10, 10);
@@ -55,7 +55,7 @@
         const loader = new THREE.GLTFLoader();
         loader.load('edol.glb', function(gltf) {
             const model = gltf.scene;
-            model.scale.set(1,1,1); // pas aan indien nodig
+            model.scale.set(1,1,1);
             model.position.set(0, 0, 0);
             scene.add(model);
         }, undefined, function(error) {
@@ -76,23 +76,19 @@
             const userText = inputEl.value.trim();
             if(userText === "") return;
 
-            // Toon gebruiker bericht
             logEl.innerHTML += `<p><b>Jij:</b> ${userText}</p>`;
             logEl.scrollTop = logEl.scrollHeight;
 
-            // Simpele AI reactie (later vervangbaar door echte API)
             const reply = "Hoi! Ik ben je EDOL. Je zei: " + userText;
             logEl.innerHTML += `<p><b>EDOL:</b> ${reply}</p>`;
             logEl.scrollTop = logEl.scrollHeight;
 
-            // TTS
             const msg = new SpeechSynthesisUtterance(reply);
             window.speechSynthesis.speak(msg);
 
             inputEl.value = '';
         }
 
-        // Window resize
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth/window.innerHeight;
             camera.updateProjectionMatrix();
