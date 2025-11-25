@@ -1,2 +1,5 @@
-streamlit>=1.25
-requests>=2.28
+streamlit
+torch
+numpy
+requests
+shap-e
