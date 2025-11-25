@@ -1,72 +1,49 @@
 import streamlit as st
-import base64
-import requests
-import json
 import os
 from datetime import datetime
-from shap_e.diffusion.sample import sample_latents
-from shap_e.util.notebooks import create_glb_from_latent
-from shap_e.models.download import load_model
+from generate_edol_with_face_and_wings import create_edol_glb
 
-st.set_page_config(page_title="EDOL 3D Generator", layout="wide")
+st.set_page_config(page_title="EDOL", page_icon="🍕", layout="wide")
+st.title("EDOL – Jouw vliegende pizza-vriend")
 
-st.title("EDOL 3D Generator")
+# Map voor GLB-bestanden
+OUTPUT_DIR = "generated_models"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-prompt = st.text_input("Beschrijf je EDOL (bv. 'een vliegende pizza met ogen en antennes')")
+# Voeg model-viewer script toe
+st.components.v1.html("""
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+""", height=0)
 
-if st.button("Genereer 3D-model"):
-    if not prompt:
-        st.error("Geef een beschrijving in!")
-        st.stop()
+st.header("Genereer jouw EDOL")
 
-    with st.spinner("3D-model wordt gegenereerd..."):
-        device = "cpu"
+# Prompt input
+prompt = st.text_input("Typ hier een korte beschrijving van je EDOL (bv. 'vliegende pizza'):")
 
-        xm = load_model("transmitter", device=device)
-        model = load_model("text300M", device=device)
+if st.button("Genereer EDOL"):
+    if not prompt.strip():
+        st.warning("⚠️ Typ eerst een naam of beschrijving!")
+    else:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = os.path.join(OUTPUT_DIR, f"edol_{prompt.replace(' ','_')}_{timestamp}.glb")
 
-        latents = sample_latents(
-            batch_size=1,
-            model=model,
-            guidance_scale=15.0,
-            prompt=prompt,
-            device=device
+        # Genereer GLB
+        create_edol_glb(filename)
+        st.success(f"✅ Je EDOL is gegenereerd: {filename}")
+
+        # Toon GLB in browser
+        st.markdown(
+            f"""
+            <model-viewer src="{filename}" alt="EDOL model" auto-rotate camera-controls background-color="#ffffff" style="width: 100%; height: 400px;">
+            </model-viewer>
+            """,
+            unsafe_allow_html=True
         )
 
-        output_path = "edol_model.glb"
-        create_glb_from_latent(xm, latents[0], output_path)
+        # Mint knop (simulatie)
+        if st.button("Mint als NFT op Base Testnet"):
+            st.balloons()
+            st.success("🚀 Je pizza-EDOL is nu een NFT (gesimuleerd) op Base Testnet!")
+            st.info(f"Bestand opgeslagen in cloud: {filename} (of lokale demo opslag)")
 
-    st.success("3D-model is klaar!")
-
-    with open(output_path, "rb") as f:
-        glb_bytes = f.read()
-
-    # Toon 3D viewer
-    st.write("### Voorbeeldweergave:")
-    st.write("Gebruik externe viewer zoals https://gltf-viewer.donmccurdy.com/")
-    st.download_button("Download GLB", data=glb_bytes, file_name="edol.glb")
-
-    # CLOUD UPLOAD NAAR GITHUB
-    st.write("### Opslaan in de cloud...")
-
-    github_repo = "USERNAME/REPO"
-    github_path = f"edols/{datetime.now().strftime('%Y%m%d_%H%M%S')}.glb"
-    github_token = st.secrets["GITHUB_TOKEN"]
-
-    encoded = base64.b64encode(glb_bytes).decode("utf-8")
-    url = f"https://api.github.com/repos/{github_repo}/contents/{github_path}"
-    
-    data = {
-        "message": "upload new EDOL model",
-        "content": encoded
-    }
-
-    res = requests.put(url, headers={
-        "Authorization": f"token {github_token}",
-        "Accept": "application/vnd.github+json"
-    }, json=data)
-
-    if res.status_code in (200, 201):
-        st.success(f"Opgeslagen als **{github_path}** in GitHub!")
-    else:
-        st.error(f"Upload mislukt: {res.text}")
+st.caption("Gebouwd door Lijs – 25 november 2025 – Gratis demo versie")
