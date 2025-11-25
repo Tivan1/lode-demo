@@ -2,4 +2,4 @@ streamlit
 torch
 numpy
 requests
-shap-e
+
